@@ -1,6 +1,21 @@
 const { app, BrowserWindow, nativeImage } = require('electron');
+const { createCanvas } = require('canvas');
 
 let win;
+
+function generateBadgeDataURL(count) {
+    const canvas = createCanvas(16, 16);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'red';
+    ctx.beginPath();
+    ctx.arc(8, 8, 7, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(count.toString(), 8, 12);
+    return canvas.toDataURL();
+}
 
 function updateBadge(count) {
     // macOS
@@ -37,7 +52,7 @@ app.whenReady().then(() => {
     updateBadge(0); // Initialize badge
 
     win.webContents.on('page-title-updated', (event, title) => {
-        const regex = /\((\d+)\)/;
+        const regex = /\(([\d+\+])\)/;
         const match = title.match(regex);
         const count = match ? parseInt(match[1]) : 0;
         updateBadge(count);

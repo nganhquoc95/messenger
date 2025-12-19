@@ -12,5 +12,8 @@
   "description": "",
   "devDependencies": {
     "electron": "^39.2.7"
+  },
+  "dependencies": {
+    "canvas": "^3.2.0"
   }
 }

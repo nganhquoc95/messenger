@@ -1,4 +1,5 @@
 const { app, BrowserWindow, nativeImage, Menu, MenuItem, Tray } = require('electron');
+const path = require('path');
 const { createCanvas, Image } = require('canvas');
 const { updateBadge } = require('./src/badge');
 
@@ -17,7 +18,7 @@ app.whenReady().then(() => {
     win = new BrowserWindow({
         width: 1000,
         height: 800,
-        icon: nativeImage.createFromPath('assets/icon.png'),
+        icon: nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png')),
         autoHideMenuBar: true,
         webPreferences: {
             contextIsolation: true
@@ -30,7 +31,7 @@ app.whenReady().then(() => {
         win.hide();
     });
 
-    const tray = new Tray(nativeImage.createFromPath('assets/icon.png'));
+    const tray = new Tray(nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png')).resize({ width: 16, height: 16 }));
     const contextMenu = Menu.buildFromTemplate([
         {
             label: 'Show App', click: () => {

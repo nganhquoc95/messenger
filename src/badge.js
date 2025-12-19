@@ -1,4 +1,5 @@
 const { nativeImage } = require('electron');
+const path = require('path');
 const { createCanvas, Image } = require('canvas');
 
 function generateBadgeDataURL(count) {
@@ -15,20 +16,20 @@ function generateBadgeDataURL(count) {
     return canvas.toDataURL();
 }
 
-function generateTrayIcon(withBadge) {
-    const icon = nativeImage.createFromPath('assets/icon.png');
-    if (!withBadge) return icon;
-    const size = icon.getSize();
-    const canvas = createCanvas(size.width, size.height);
+function generateTrayIcon(app, withBadge) {
+    const icon = nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png'));
+    const canvas = createCanvas(16, 16);
     const ctx = canvas.getContext('2d');
     const iconBuffer = icon.toPNG();
     const img = new Image();
     img.src = iconBuffer;
-    ctx.drawImage(img, 0, 0);
-    ctx.fillStyle = 'red';
-    ctx.beginPath();
-    ctx.arc(size.width - 10, 10, 5, 0, 2 * Math.PI);
-    ctx.fill();
+    ctx.drawImage(img, 0, 0, 16, 16);
+    if (withBadge) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(16 - 5, 5, 3, 0, 2 * Math.PI);
+        ctx.fill();
+    }
     const buffer = canvas.toBuffer('image/png');
     return nativeImage.createFromBuffer(buffer);
 }
@@ -52,7 +53,7 @@ function updateBadge(app, win, tray, count) {
         app.setBadgeCount(count);
     }
     if (tray) {
-        tray.setImage(generateTrayIcon(count > 0));
+        tray.setImage(generateTrayIcon(app, count > 0));
     }
 }
 

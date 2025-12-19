@@ -1,5 +1,5 @@
 const { app, BrowserWindow, nativeImage, Menu, MenuItem, Tray } = require('electron');
-const { createCanvas } = require('canvas');
+const { createCanvas, Image } = require('canvas');
 
 let win;
 let tray;
@@ -25,7 +25,7 @@ function generateTrayIcon(withBadge) {
     const canvas = createCanvas(size.width, size.height);
     const ctx = canvas.getContext('2d');
     const iconBuffer = icon.toPNG();
-    const img = new (require('canvas').Image)();
+    const img = new Image();
     img.src = iconBuffer;
     ctx.drawImage(img, 0, 0);
     ctx.fillStyle = 'red';
@@ -88,7 +88,7 @@ app.whenReady().then(() => {
     const tray = new Tray(nativeImage.createFromPath('assets/icon.png'));
     const contextMenu = Menu.buildFromTemplate([
         { label: 'Show App', click: () => { win.show(); win.focus(); } },
-        { label: 'Quit', click: () => { app.quit(); } }
+        { label: 'Quit', click: () => { tray.destroy(); app.quit(); } }
     ]);
     tray.setContextMenu(contextMenu);
     tray.on('click', () => {

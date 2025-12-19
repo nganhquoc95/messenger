@@ -1,63 +1,8 @@
 const { app, BrowserWindow, nativeImage, Menu, MenuItem, Tray } = require('electron');
 const { createCanvas, Image } = require('canvas');
+const { updateBadge } = require('./src/badge');
 
 let win;
-let tray;
-
-function generateBadgeDataURL(count) {
-    const canvas = createCanvas(16, 16);
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'red';
-    ctx.beginPath();
-    ctx.arc(8, 8, 7, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.fillStyle = 'white';
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(count.toString(), 8, 12);
-    return canvas.toDataURL();
-}
-
-function generateTrayIcon(withBadge) {
-    const icon = nativeImage.createFromPath('assets/icon.png');
-    if (!withBadge) return icon;
-    const size = icon.getSize();
-    const canvas = createCanvas(size.width, size.height);
-    const ctx = canvas.getContext('2d');
-    const iconBuffer = icon.toPNG();
-    const img = new Image();
-    img.src = iconBuffer;
-    ctx.drawImage(img, 0, 0);
-    ctx.fillStyle = 'red';
-    ctx.beginPath();
-    ctx.arc(size.width - 10, 10, 5, 0, 2 * Math.PI);
-    ctx.fill();
-    const buffer = canvas.toBuffer('image/png');
-    return nativeImage.createFromBuffer(buffer);
-}
-
-function updateBadge(count) {
-    // macOS
-    if (process.platform === 'darwin') {
-        app.dock.setBadge(count > 0 ? String(count) : '');
-    }
-    // Windows: overlay icon (numeric icon must be generated as NativeImage)
-    if (process.platform === 'win32') {
-        if (count > 0) {
-            const img = nativeImage.createFromDataURL(generateBadgeDataURL(count)); // bạn tạo icon nhỏ
-            win.setOverlayIcon(img, `${count} unread`);
-        } else {
-            win.setOverlayIcon(null, '');
-        }
-    }
-    // Linux: thử app.setBadgeCount hoặc tray fallback
-    if (process.platform === 'linux') {
-        app.setBadgeCount(count);
-    }
-    if (tray) {
-        tray.setImage(generateTrayIcon(count > 0));
-    }
-}
 
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -87,8 +32,19 @@ app.whenReady().then(() => {
 
     const tray = new Tray(nativeImage.createFromPath('assets/icon.png'));
     const contextMenu = Menu.buildFromTemplate([
-        { label: 'Show App', click: () => { win.show(); win.focus(); } },
-        { label: 'Quit', click: () => { tray.destroy(); app.quit(); } }
+        {
+            label: 'Show App', click: () => {
+                win.show();
+                win.focus();
+            }
+        },
+        {
+            label: 'Quit', click: () => {
+                win.destroy();
+                tray.destroy();
+                app.quit();
+            }
+        }
     ]);
     tray.setContextMenu(contextMenu);
     tray.on('click', () => {
@@ -111,7 +67,7 @@ app.whenReady().then(() => {
         }
     });
 
-    updateBadge(0); // Initialize badge
+    updateBadge(app, win, tray, 0); // Initialize badge
 
     win.webContents.setWindowOpenHandler(({ url }) => {
         if (url.includes('facebook.com')) {
@@ -139,7 +95,7 @@ app.whenReady().then(() => {
         const regex = /\(([\d+\+])\)/;
         const match = title.match(regex);
         const count = match ? parseInt(match[1]) : 0;
-        updateBadge(count);
+        updateBadge(app, win, tray, count);
     });
 });
 

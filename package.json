@@ -27,6 +27,7 @@
     },
     "files": [
       "main.js",
+      "src/**",
       "assets/**"
     ],
     "asar": true,

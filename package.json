@@ -9,9 +9,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Jonathan Nguyen",
   "license": "ISC",
-  "description": "",
+  "description": "Messenger desktop application built with Electron.",
   "devDependencies": {
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12"
@@ -25,6 +25,10 @@
     "directories": {
       "output": "dist"
     },
+    "electronLanguages": [
+      "en-US",
+      "vi"
+    ],
     "files": [
       "main.js",
       "src/**",
@@ -33,7 +37,7 @@
     "asar": true,
     "compression": "maximum",
     "win": {
-      "target": "msi",
+      "target": "nsis",
       "icon": "assets/icon.png"
     }
   }

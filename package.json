@@ -4,6 +4,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=never",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,9 +13,27 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "electron": "^39.2.7"
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12"
   },
   "dependencies": {
     "canvas": "^3.2.0"
+  },
+  "build": {
+    "appId": "com.messenger.app",
+    "productName": "Messenger",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "assets/**"
+    ],
+    "asar": true,
+    "compression": "maximum",
+    "win": {
+      "target": "msi",
+      "icon": "assets/icon.png"
+    }
   }
 }

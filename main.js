@@ -1,4 +1,4 @@
-const { app, BrowserWindow, nativeImage } = require('electron');
+const { app, BrowserWindow, nativeImage, Menu, MenuItem } = require('electron');
 const { createCanvas } = require('canvas');
 
 let win;
@@ -38,6 +38,8 @@ function updateBadge(count) {
 }
 
 app.whenReady().then(() => {
+    const userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';
+
     win = new BrowserWindow({
         width: 1000,
         height: 800,
@@ -47,9 +49,46 @@ app.whenReady().then(() => {
             contextIsolation: true
         }
     });
+    // win.webContents.setUserAgent(userAgent);
     win.loadURL('https://www.messenger.com');
 
+    win.webContents.on('context-menu', (event, params) => {
+        const menu = new Menu();
+        if (params.selectionText) {
+            menu.append(new MenuItem({ label: 'Copy', role: 'copy' }));
+        }
+        if (params.isEditable) {
+            menu.append(new MenuItem({ label: 'Cut', role: 'cut' }));
+            menu.append(new MenuItem({ label: 'Paste', role: 'paste' }));
+            menu.append(new MenuItem({ label: 'Select All', role: 'selectall' }));
+        }
+        if (menu.items.length > 0) {
+            menu.popup();
+        }
+    });
+
     updateBadge(0); // Initialize badge
+
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        if (url.includes('facebook.com')) {
+            const portalWin = new BrowserWindow({
+                width: 450,
+                height: 800,
+                parent: win,
+                modal: false,
+                webPreferences: {
+                    contextIsolation: true
+                }
+            });
+            portalWin.webContents.setUserAgent(userAgent);
+            portalWin.loadURL(url);
+            portalWin.webContents.on('dom-ready', () => {
+                portalWin.webContents.insertCSS('::-webkit-scrollbar { display: none; }');
+            });
+            return { action: 'deny' };
+        }
+        return { action: 'allow' };
+    });
 
     win.webContents.on('page-title-updated', (event, title) => {
         const regex = /\(([\d+\+])\)/;

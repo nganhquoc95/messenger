@@ -1,7 +1,8 @@
-const { app, BrowserWindow, nativeImage, Menu, MenuItem } = require('electron');
+const { app, BrowserWindow, nativeImage, Menu, MenuItem, Tray } = require('electron');
 const { createCanvas } = require('canvas');
 
 let win;
+let tray;
 
 function generateBadgeDataURL(count) {
     const canvas = createCanvas(16, 16);
@@ -15,6 +16,24 @@ function generateBadgeDataURL(count) {
     ctx.textAlign = 'center';
     ctx.fillText(count.toString(), 8, 12);
     return canvas.toDataURL();
+}
+
+function generateTrayIcon(withBadge) {
+    const icon = nativeImage.createFromPath('assets/icon.png');
+    if (!withBadge) return icon;
+    const size = icon.getSize();
+    const canvas = createCanvas(size.width, size.height);
+    const ctx = canvas.getContext('2d');
+    const iconBuffer = icon.toPNG();
+    const img = new (require('canvas').Image)();
+    img.src = iconBuffer;
+    ctx.drawImage(img, 0, 0);
+    ctx.fillStyle = 'red';
+    ctx.beginPath();
+    ctx.arc(size.width - 10, 10, 5, 0, 2 * Math.PI);
+    ctx.fill();
+    const buffer = canvas.toBuffer('image/png');
+    return nativeImage.createFromBuffer(buffer);
 }
 
 function updateBadge(count) {
@@ -35,6 +54,16 @@ function updateBadge(count) {
     if (process.platform === 'linux') {
         app.setBadgeCount(count);
     }
+    if (tray) {
+        tray.setImage(generateTrayIcon(count > 0));
+    }
+}
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+    app.quit();
+    return;
 }
 
 app.whenReady().then(() => {
@@ -49,8 +78,23 @@ app.whenReady().then(() => {
             contextIsolation: true
         }
     });
-    // win.webContents.setUserAgent(userAgent);
     win.loadURL('https://www.messenger.com');
+
+    win.on('close', (event) => {
+        event.preventDefault();
+        win.hide();
+    });
+
+    const tray = new Tray(nativeImage.createFromPath('assets/icon.png'));
+    const contextMenu = Menu.buildFromTemplate([
+        { label: 'Show App', click: () => { win.show(); win.focus(); } },
+        { label: 'Quit', click: () => { app.quit(); } }
+    ]);
+    tray.setContextMenu(contextMenu);
+    tray.on('click', () => {
+        win.show();
+        win.focus();
+    });
 
     win.webContents.on('context-menu', (event, params) => {
         const menu = new Menu();
@@ -75,6 +119,7 @@ app.whenReady().then(() => {
                 width: 450,
                 height: 800,
                 parent: win,
+                autoHideMenuBar: true,
                 modal: false,
                 webPreferences: {
                     contextIsolation: true
@@ -96,4 +141,11 @@ app.whenReady().then(() => {
         const count = match ? parseInt(match[1]) : 0;
         updateBadge(count);
     });
+});
+
+app.on('second-instance', () => {
+    if (win) {
+        win.show();
+        win.focus();
+    }
 });

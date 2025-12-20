@@ -10,4 +10,3 @@ A basic Electron application.
 ## Development
 
 - Main process: `main.js`
-- Renderer: `index.html` and `renderer.js`

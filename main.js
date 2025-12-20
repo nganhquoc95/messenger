@@ -1,6 +1,5 @@
-const { app, BrowserWindow, nativeImage, Menu, MenuItem, Tray } = require('electron');
+const { app, BrowserWindow, nativeImage, Menu, MenuItem, Tray, session } = require('electron');
 const path = require('path');
-const { createCanvas, Image } = require('canvas');
 const { updateBadge } = require('./src/badge');
 
 let win;
@@ -21,8 +20,10 @@ app.whenReady().then(() => {
         icon: nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png')),
         autoHideMenuBar: true,
         webPreferences: {
-            contextIsolation: true
-        }
+            contextIsolation: true,
+            backgroundThrottling: false
+        },
+        session: session.defaultSession
     });
     win.loadURL('https://www.messenger.com');
 
@@ -79,8 +80,10 @@ app.whenReady().then(() => {
                 autoHideMenuBar: true,
                 modal: false,
                 webPreferences: {
-                    contextIsolation: true
-                }
+                    contextIsolation: true,
+                    backgroundThrottling: false
+                },
+                session: session.defaultSession
             });
             portalWin.webContents.setUserAgent(userAgent);
             portalWin.loadURL(url);
@@ -93,9 +96,9 @@ app.whenReady().then(() => {
     });
 
     win.webContents.on('page-title-updated', (event, title) => {
-        const regex = /\(([\d+\+])\)/;
+        const regex = /\((\d+)\+?\)/; // capture digits, optional trailing +
         const match = title.match(regex);
-        const count = match ? parseInt(match[1]) : 0;
+        const count = match ? parseInt(match[1], 10) : 0;
         updateBadge(app, win, tray, count);
     });
 });

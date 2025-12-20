@@ -10,9 +10,11 @@ function generateBadgeDataURL(count) {
     ctx.arc(8, 8, 7, 0, 2 * Math.PI);
     ctx.fill();
     ctx.fillStyle = 'white';
-    ctx.font = '10px Arial';
+    // cap display to keep it readable on a 16x16 badge
+    const display = count > 9 ? '9+' : String(count);
+    ctx.font = '10px Sans';
     ctx.textAlign = 'center';
-    ctx.fillText(count.toString(), 8, 12);
+    ctx.fillText(display, 8, 12);
     return canvas.toDataURL();
 }
 

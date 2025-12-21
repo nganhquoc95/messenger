@@ -1,6 +1,7 @@
 const { app, BrowserWindow, nativeImage, Menu, MenuItem, Tray, session } = require('electron');
 const path = require('path');
 const { updateBadge } = require('./src/badge');
+const { openFacebookHandler } = require('./src/handlers/open-facebook-handler');
 
 let win;
 
@@ -12,8 +13,6 @@ if (!gotTheLock) {
 }
 
 app.whenReady().then(() => {
-    const userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';
-
     win = new BrowserWindow({
         width: 1000,
         height: 800,
@@ -71,61 +70,7 @@ app.whenReady().then(() => {
 
     updateBadge(app, win, tray, 0); // Initialize badge
 
-    win.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.includes('facebook.com')) {
-            const portalWin = new BrowserWindow({
-                width: 450,
-                height: 800,
-                // parent: win,
-                autoHideMenuBar: true,
-                modal: false,
-                webPreferences: {
-                    contextIsolation: true,
-                    backgroundThrottling: false
-                },
-                session: session.defaultSession
-            });
-            portalWin.webContents.setUserAgent(userAgent);
-            portalWin.loadURL(url);
-            portalWin.webContents.on('dom-ready', () => {
-                portalWin.webContents.insertCSS('::-webkit-scrollbar { display: none; }');
-                portalWin.webContents.insertCSS(`
-                    [role="tablist"] {
-                        position: fixed!important;
-                        bottom: 0!important;
-                        z-index: 1!important;
-                    }
-                `);
-                portalWin.webContents.executeJavaScript(`
-                    (function(){
-                        function hideOpenAppButtons(){
-                            document.querySelectorAll('.fixed-container.bottom').forEach(el => {
-                                try{
-                                    const text = (el.innerText || el.textContent || '').toLowerCase();
-                                    if(text.includes('open app')){
-                                        el.classList.add('hidden');
-                                        el.style.display = 'none';
-                                        el.setAttribute('aria-hidden', 'true');
-                                    }
-                                }catch(e){/* ignore cross-origin or read errors */}
-                            });
-                        }
-                        if(document.readyState === 'loading'){
-                            document.addEventListener('DOMContentLoaded', hideOpenAppButtons);
-                        } else {
-                            hideOpenAppButtons();
-                        }
-                        try{
-                            const observer = new MutationObserver(hideOpenAppButtons);
-                            observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-                        }catch(e){/* ignore if MutationObserver unavailable */}
-                    })();
-                `);
-            });
-            return { action: 'deny' };
-        }
-        return { action: 'allow' };
-    });
+    win.webContents.setWindowOpenHandler(openFacebookHandler);
 
     win.webContents.on('page-title-updated', (event, title) => {
         const regex = /\((\d+)\+?\)/; // capture digits, optional trailing +

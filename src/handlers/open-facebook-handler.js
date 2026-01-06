@@ -6,6 +6,9 @@ const replaceMessengerToProfile = require('./facebook/replace-messenger-to-profi
 const preventOpenPost = require('./facebook/prevent-open-post');
 
 const openFacebookHandler = ({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+
     if (!url.includes('.facebook.com')) {
         shell.openExternal(url);
         return { action: 'deny' };

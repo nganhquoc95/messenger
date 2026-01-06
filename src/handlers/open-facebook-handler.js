@@ -1,4 +1,4 @@
-const { BrowserWindow, session, Menu } = require('electron');
+const { BrowserWindow, Menu, shell, session  } = require('electron');
 const styleFacebook = require('./styles/style-facebook');
 const copyPost = require('./facebook/copy-post');
 const hideOpenAppButtons = require('./facebook/hide-open-app-buttons');
@@ -7,7 +7,8 @@ const preventOpenPost = require('./facebook/prevent-open-post');
 
 const openFacebookHandler = ({ url }) => {
     if (!url.includes('.facebook.com')) {
-        return { action: 'allow' };
+        shell.openExternal(url);
+        return { action: 'deny' };
     }
 
     const userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';

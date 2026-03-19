@@ -2,6 +2,7 @@ const { app, BrowserWindow, nativeImage, Menu, MenuItem, Tray, session } = requi
 const path = require('path');
 const { updateBadge } = require('./src/badge');
 const { openFacebookHandler } = require('./src/handlers/open-facebook-handler');
+const styleMessages = require('./src/handlers/styles/messages');
 
 let win;
 
@@ -25,6 +26,9 @@ app.whenReady().then(() => {
         session: session.defaultSession
     });
     win.loadURL('https://www.facebook.com/messages');
+    win.webContents.on('dom-ready', () => {
+        styleMessages(win);
+    });
 
     win.on('close', (event) => {
         event.preventDefault();

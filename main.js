@@ -24,7 +24,7 @@ app.whenReady().then(() => {
         },
         session: session.defaultSession
     });
-    win.loadURL('https://www.messenger.com');
+    win.loadURL('https://www.facebook.com/messages');
 
     win.on('close', (event) => {
         event.preventDefault();

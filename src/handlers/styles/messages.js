@@ -3,28 +3,28 @@ const styleMessages = (win) => {
     win.webContents.insertCSS(`
         div[role="banner"] { display: none !important; }
         div[role="banner"] + div > div > div {
-            top: 0;
-            min-height: 100vh;
+            top: 0 !important;
+            min-height: 100vh !important;
         }
 
         div[role="banner"] + div > div > div > div {
-            margin-bottom: 0;
+            margin-bottom: 0 !important;
         }
 
         div[role="banner"] + div > div > div > div > div {
-            min-height: 100vh;
+            min-height: 100vh !important;
         }
 
         div[data-pagelet="MWInboxDetail"] > [role="main"] {
-            max-height: 100vh;
+            max-height: 100vh!important;
         }
 
         div[data-pagelet="MWInboxDetail"] > [role="main"] > div > div > div {
-            max-height: 100vh;
+            max-height: 100vh!important;
         }
 
         div[data-pagelet="MWInboxDetail"] > [role="main"] > div > div > div > div {
-            max-height: calc(100vh - 2*var(--messenger-card-spacing));
+            max-height: calc(100vh - 2*var(--messenger-card-spacing))!important;
         }
     `);
 }

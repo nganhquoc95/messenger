@@ -9,7 +9,7 @@ const openFacebookHandler = ({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
 
-    if (!url.includes('.facebook.com')) {
+    if (!url.includes('.facebook.com/messages')) {
         shell.openExternal(url);
         return { action: 'deny' };
     }

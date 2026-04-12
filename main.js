@@ -1,7 +1,16 @@
-const { app, BrowserWindow, nativeImage, Menu, MenuItem, Tray, session } = require('electron');
+const {
+    app,
+    BrowserWindow,
+    nativeImage,
+    Menu,
+    MenuItem,
+    Tray,
+    session,
+} = require('electron');
 const path = require('path');
 const { updateBadge } = require('./src/badge');
 const { openFacebookHandler } = require('./src/handlers/open-facebook-handler');
+const { getUnreadMessageCounter } = require('./src/handlers/get-unread-message-counter');
 const styleMessages = require('./src/handlers/styles/messages');
 
 let win;
@@ -25,8 +34,8 @@ app.whenReady().then(() => {
         },
         session: session.defaultSession
     });
-    win.loadURL('https://www.messenger.com');
-    // win.loadURL('https://www.facebook.com/messages');
+    // win.loadURL('https://www.messenger.com');
+    win.loadURL('https://www.facebook.com/messages');
     win.webContents.on('dom-ready', () => {
         styleMessages(win);
     });
@@ -36,7 +45,11 @@ app.whenReady().then(() => {
         win.hide();
     });
 
-    const tray = new Tray(nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png')).resize({ width: 16, height: 16 }));
+    const tray = new Tray(
+        nativeImage.createFromPath(
+            path.join(app.getAppPath(), 'assets/icon.png')
+        ).resize({ width: 16, height: 16 })
+    );
     const contextMenu = Menu.buildFromTemplate([
         {
             label: 'Show App', click: () => {
@@ -78,10 +91,8 @@ app.whenReady().then(() => {
     win.webContents.setWindowOpenHandler(openFacebookHandler);
 
     win.webContents.on('page-title-updated', (event, title) => {
-        const regex = /\((\d+)\+?\)/; // capture digits, optional trailing +
-        const match = title.match(regex);
-        const count = match ? parseInt(match[1], 10) : 0;
-        updateBadge(app, win, tray, count);
+        const unreadMessageCounter = getUnreadMessageCounter(win);
+        updateBadge(app, win, tray, unreadMessageCounter);
     });
 });
 

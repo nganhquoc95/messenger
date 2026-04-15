@@ -23,9 +23,20 @@ if (!gotTheLock) {
 }
 
 app.whenReady().then(() => {
+    const splash = new BrowserWindow({
+        width: 400,
+        height: 500,
+        transparent: true,
+        frame: false,
+        alwaysOnTop: true,
+        icon: nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png'))
+    });
+    splash.loadFile('splash.html');
+
     win = new BrowserWindow({
         width: 1000,
         height: 800,
+        show: false, // hide initially
         icon: nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png')),
         autoHideMenuBar: true,
         webPreferences: {
@@ -36,8 +47,17 @@ app.whenReady().then(() => {
     });
     // win.loadURL('https://www.messenger.com');
     win.loadURL('https://www.facebook.com/messages');
-    win.webContents.on('dom-ready', () => {
-        styleMessages(win);
+    win.webContents.on('did-finish-load', async () => {
+        try {
+            await styleMessages(win);
+        } catch (err) {
+            console.error('Failed to inject custom styles:', err);
+        }
+
+        if (splash && !splash.isDestroyed()) {
+            splash.destroy();
+            win.show();
+        }
     });
 
     win.on('close', (event) => {
@@ -108,7 +128,7 @@ app.whenReady().then(() => {
             const isMessenger = domain.includes('messenger.com');
             const isFacebook = domain.includes('facebook.com');
             const path = parsedUrl.pathname;
-            
+
             // Allow login, checkpoint, and messages paths to navigate within the app
             const isAllowedPath = path.startsWith('/messages') || path.startsWith('/login') || path.startsWith('/checkpoint') || path === '/';
 

@@ -40,7 +40,8 @@
       {
         "provider": "github",
         "owner": "nganhquoc95",
-        "repo": "messenger"
+        "repo": "messenger",
+        "releaseType": "draft"
       }
     ],
     "asar": true,

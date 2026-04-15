@@ -6,6 +6,9 @@ const {
     MenuItem,
     Tray,
     session,
+    dialog,
+    ipcMain,
+    shell,
 } = require('electron');
 const path = require('path');
 const { updateBadge } = require('./src/badge');
@@ -115,6 +118,12 @@ app.whenReady().then(() => {
             }
         },
         {
+            label: 'About', click: () => {
+                createAboutWindow();
+            }
+        },
+        { type: 'separator' },
+        {
             label: 'Quit', click: () => {
                 win.destroy();
                 tray.destroy();
@@ -141,6 +150,85 @@ app.whenReady().then(() => {
         if (menu.items.length > 0) {
             menu.popup();
         }
+    });
+
+    // Create Application Menu
+    const appMenu = Menu.buildFromTemplate([
+        {
+            label: 'File',
+            submenu: [
+                { label: 'Show App', click: () => win.show() },
+                { type: 'separator' },
+                { label: 'Quit', role: 'quit' }
+            ]
+        },
+        {
+            label: 'Edit',
+            submenu: [
+                { role: 'undo' },
+                { role: 'redo' },
+                { type: 'separator' },
+                { role: 'cut' },
+                { role: 'copy' },
+                { role: 'paste' },
+                { role: 'selectAll' }
+            ]
+        },
+        {
+            label: 'View',
+            submenu: [
+                { role: 'reload' },
+                { role: 'forceReload' },
+                { role: 'toggleDevTools' },
+                { type: 'separator' },
+                { role: 'resetZoom' },
+                { role: 'zoomIn' },
+                { role: 'zoomOut' },
+                { type: 'separator' },
+                { role: 'togglefullscreen' }
+            ]
+        },
+        {
+            label: 'Help',
+            submenu: [
+                {
+                    label: 'About',
+                    click: () => {
+                        createAboutWindow();
+                    }
+                }
+            ]
+        }
+    ]);
+    Menu.setApplicationMenu(appMenu);
+
+    function createAboutWindow() {
+        const aboutWin = new BrowserWindow({
+            width: 400,
+            height: 450,
+            resizable: false,
+            frame: false,
+            transparent: true,
+            webPreferences: {
+                preload: path.join(__dirname, 'src/about-preload.js'),
+                contextIsolation: true,
+                nodeIntegration: false
+            },
+            icon: nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png')),
+            alwaysOnTop: true,
+            modal: true,
+            parent: win
+        });
+
+        aboutWin.loadFile(path.join(__dirname, 'src/about.html'));
+        aboutWin.once('ready-to-show', () => {
+            aboutWin.show();
+            aboutWin.webContents.send('version', app.getVersion());
+        });
+    }
+
+    ipcMain.on('open-external', (event, url) => {
+        shell.openExternal(url);
     });
 
     win.webContents.on('before-input-event', (event, input) => {

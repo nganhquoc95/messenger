@@ -11,6 +11,7 @@ const path = require('path');
 const { updateBadge } = require('./src/badge');
 const { openFacebookHandler } = require('./src/handlers/open-facebook-handler');
 const { getUnreadMessageCounter } = require('./src/handlers/get-unread-message-counter');
+const { switchChat } = require('./src/handlers/switch-chat');
 const styleMessages = require('./src/handlers/styles/messages');
 const { autoUpdater } = require('electron-updater');
 
@@ -139,6 +140,16 @@ app.whenReady().then(() => {
         }
         if (menu.items.length > 0) {
             menu.popup();
+        }
+    });
+
+    win.webContents.on('before-input-event', (event, input) => {
+        if (input.control && input.type === 'keyDown') {
+            const digit = parseInt(input.key);
+            if (!isNaN(digit) && digit >= 1 && digit <= 9) {
+                event.preventDefault();
+                switchChat(win, digit - 1);
+            }
         }
     });
 

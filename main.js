@@ -14,6 +14,12 @@ const { getUnreadMessageCounter } = require('./src/handlers/get-unread-message-c
 const styleMessages = require('./src/handlers/styles/messages');
 const { autoUpdater } = require('electron-updater');
 
+// Performance switches for WebKit / Chromium
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+
 // Configure autoUpdater
 autoUpdater.autoDownload = true;
 autoUpdater.allowPrerelease = false;

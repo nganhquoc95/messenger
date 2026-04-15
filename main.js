@@ -37,7 +37,7 @@ app.whenReady().then(() => {
     // win.loadURL('https://www.messenger.com');
     win.loadURL('https://www.facebook.com/messages');
     win.webContents.on('dom-ready', () => {
-        styleMessages(win);
+        // styleMessages(win);
     });
 
     win.on('close', (event) => {
@@ -90,9 +90,13 @@ app.whenReady().then(() => {
 
     win.webContents.setWindowOpenHandler(openFacebookHandler);
 
-    win.webContents.on('page-title-updated', (event, title) => {
-        const unreadMessageCounter = getUnreadMessageCounter(win);
-        updateBadge(app, win, tray, unreadMessageCounter);
+    win.webContents.on('page-title-updated', async (event, title) => {
+        try {
+            const unreadMessageCounter = await getUnreadMessageCounter(win);
+            updateBadge(app, win, tray, unreadMessageCounter);
+        } catch (err) {
+            console.error('Failed to update unread message counter:', err);
+        }
     });
 });
 

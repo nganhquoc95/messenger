@@ -37,7 +37,7 @@ app.whenReady().then(() => {
     // win.loadURL('https://www.messenger.com');
     win.loadURL('https://www.facebook.com/messages');
     win.webContents.on('dom-ready', () => {
-        // styleMessages(win);
+        styleMessages(win);
     });
 
     win.on('close', (event) => {
@@ -89,6 +89,38 @@ app.whenReady().then(() => {
     updateBadge(app, win, tray, 0); // Initialize badge
 
     win.webContents.setWindowOpenHandler(openFacebookHandler);
+
+    win.webContents.on('will-navigate', (event, url) => {
+        try {
+            const parsedUrl = new URL(url);
+            const domain = parsedUrl.hostname;
+
+            // Handle Facebook's outward link redirection
+            if (domain === 'l.facebook.com' || domain === 'lm.facebook.com') {
+                const urlParam = parsedUrl.searchParams.get('u');
+                if (urlParam) {
+                    event.preventDefault();
+                    require('electron').shell.openExternal(urlParam);
+                    return;
+                }
+            }
+
+            const isMessenger = domain.includes('messenger.com');
+            const isFacebook = domain.includes('facebook.com');
+            const path = parsedUrl.pathname;
+            
+            // Allow login, checkpoint, and messages paths to navigate within the app
+            const isAllowedPath = path.startsWith('/messages') || path.startsWith('/login') || path.startsWith('/checkpoint') || path === '/';
+
+            // Navigate externally if not a messenger/facebook domain, or if it's a facebook domain but not an allowed path
+            if (!isMessenger && (!isFacebook || !isAllowedPath)) {
+                event.preventDefault();
+                require('electron').shell.openExternal(url);
+            }
+        } catch (err) {
+            console.error('Error handling navigation:', err);
+        }
+    });
 
     win.webContents.on('page-title-updated', async (event, title) => {
         try {

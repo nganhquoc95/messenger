@@ -1,4 +1,4 @@
-const { BrowserWindow, Menu, shell, session  } = require('electron');
+const { BrowserWindow, Menu, shell, session } = require('electron');
 const styleFacebook = require('./styles/style-facebook');
 const copyPost = require('./facebook/copy-post');
 const hideOpenAppButtons = require('./facebook/hide-open-app-buttons');
@@ -33,7 +33,7 @@ const openFacebookHandler = ({ url }) => {
     portalWin.webContents.on('dom-ready', () => {
         // Inject custom styles and handlers
         styleFacebook(portalWin);
-                
+
         hideOpenAppButtons(portalWin);
         replaceMessengerToProfile(portalWin);
         preventOpenPost(portalWin);

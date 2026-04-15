@@ -17,7 +17,8 @@
     "electron-builder": "^26.0.12"
   },
   "dependencies": {
-    "canvas": "^3.2.0"
+    "canvas": "^3.2.0",
+    "electron-updater": "^6.8.3"
   },
   "build": {
     "appId": "com.messenger.app",
@@ -32,13 +33,24 @@
     "files": [
       "main.js",
       "src/**",
-      "assets/**"
+      "assets/**",
+      "splash.html"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "nganhquoc95",
+        "repo": "messenger"
+      }
     ],
     "asar": true,
     "compression": "maximum",
     "win": {
-      "target": "msi",
-      "icon": "assets/icon.png"
+        "target": [
+            "msi",
+            "nsis"
+        ],
+        "icon": "assets/icon.png"
     },
     "mac": {
       "target": "dmg",

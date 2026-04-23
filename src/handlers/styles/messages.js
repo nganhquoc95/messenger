@@ -14,6 +14,15 @@ const styleMessages = (win) => {
                 min-height: 100%!important;
             }
 
+            div[data-pagelet="MWInboxDetail"] > div[role="region"],
+            div[data-pagelet="MWInboxDetail"] > div[role="region"] > div > div > div {
+                max-height: 100vh !important;
+            }
+
+            div[data-pagelet="MWInboxDetail"] > div[role="region"] > div > div > div > div {
+                max-height: calc(100vh - 2 * var(--messenger-card-spacing)) !important;
+            }
+
             div[role="banner"] + div > div > div > div {
                 margin-bottom: 0!important;
             }

@@ -10,6 +10,7 @@ const {
     ipcMain,
     shell,
 } = require('electron');
+const fs = require('fs');
 const path = require('path');
 const { updateBadge } = require('./src/badge');
 const { openFacebookHandler } = require('./src/handlers/open-facebook-handler');
@@ -65,7 +66,7 @@ app.whenReady().then(() => {
         height: 500,
         transparent: true,
         frame: false,
-        alwaysOnTop: true,
+        alwaysOnTop: false,
         icon: nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png'))
     });
     splash.loadFile('splash.html');
@@ -82,8 +83,8 @@ app.whenReady().then(() => {
         },
         session: session.defaultSession
     });
-    // win.loadURL('https://www.messenger.com');
-    win.loadURL('https://www.facebook.com/messages');
+    win.loadURL('https://www.messenger.com');
+    // win.loadURL('https://www.facebook.com/messages');
     win.webContents.on('did-finish-load', async () => {
         try {
             await styleMessages(win);
@@ -110,7 +111,27 @@ app.whenReady().then(() => {
             path.join(app.getAppPath(), 'assets/icon.png')
         ).resize({ width: 16, height: 16 })
     );
+    // Determine current login item setting (used for the tray menu checkbox)
+    const loginSettings = app.getLoginItemSettings ? app.getLoginItemSettings() : { openAtLogin: false };
+    const startWithWindowsChecked = !!loginSettings.openAtLogin;
     const contextMenu = Menu.buildFromTemplate([
+        {
+            label: 'Start with Windows',
+            type: 'checkbox',
+            visible: process.platform === 'win32',
+            checked: startWithWindowsChecked,
+            click: (menuItem) => {
+                try {
+                    app.setLoginItemSettings({
+                        openAtLogin: menuItem.checked,
+                        path: process.execPath,
+                        args: []
+                    });
+                } catch (err) {
+                    console.error('Failed to update login item settings:', err);
+                }
+            }
+        },
         {
             label: 'Show App', click: () => {
                 win.show();
@@ -137,6 +158,48 @@ app.whenReady().then(() => {
         win.focus();
     });
 
+    const onSaveImage = async function (params) {
+        try {
+            const imageUrl = params.srcURL;
+            let buffer;
+
+            if (imageUrl.startsWith('blob:')) {
+                // Fetch blob inside renderer process
+                const base64 = await win.webContents.executeJavaScript(`
+                    (async () => {
+                        const res = await fetch("${imageUrl}");
+                        const blob = await res.blob();
+
+                        return await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                resolve(reader.result.split(',')[1]);
+                            };
+                            reader.readAsDataURL(blob);
+                        });
+                    })();
+                `);
+
+                buffer = Buffer.from(base64, 'base64');
+            } else {
+                // normal URL
+                const res = await fetch(imageUrl);
+                const arrayBuffer = await res.arrayBuffer();
+                buffer = Buffer.from(arrayBuffer);
+            }
+
+            const { filePath } = await dialog.showSaveDialog({
+                defaultPath: 'image.png'
+            });
+
+            if (filePath) {
+                fs.writeFileSync(filePath, buffer);
+            }
+        } catch (err) {
+            console.error('Save image failed:', err);
+        }
+    }
+
     win.webContents.on('context-menu', (event, params) => {
         const menu = new Menu();
         if (params.selectionText) {
@@ -146,6 +209,9 @@ app.whenReady().then(() => {
             menu.append(new MenuItem({ label: 'Cut', role: 'cut' }));
             menu.append(new MenuItem({ label: 'Paste', role: 'paste' }));
             menu.append(new MenuItem({ label: 'Select All', role: 'selectall' }));
+        }
+        if (params.hasImageContents) {
+            menu.append(new MenuItem({ label: 'Save Image', click: () => onSaveImage(params) }));
         }
         if (menu.items.length > 0) {
             menu.popup();

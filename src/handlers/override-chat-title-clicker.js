@@ -5,6 +5,11 @@
 const overrideChatTitleClick = (win) => {
     return win.webContents.executeJavaScript(`
         (function() {
+            if (window.__chatTitleOverrideInjected) {
+                return true;
+            }
+
+            window.__chatTitleOverrideInjected = true;
             const headerSelector = '[data-pagelet="MWInboxDetail_MessageList_Header"]';
 
             const findTitleLink = (container) => {
@@ -26,54 +31,37 @@ const overrideChatTitleClick = (win) => {
                 return container.querySelector('.x1c9tyrk[role="button"]') || buttons[0] || null;
             };
 
-            const attachOverride = () => {
-                const header = document.querySelector(headerSelector);
+            const handleTitleClick = (event) => {
+                const target = event.target && typeof event.target.closest === 'function'
+                    ? event.target.closest('[role="link"], a')
+                    : null;
+                if (!target) {
+                    return;
+                }
+
+                const header = target.closest(headerSelector);
                 if (!header) {
-                    return false;
+                    return;
                 }
 
-                const titleEl = findTitleLink(header);
+                const titleLink = findTitleLink(header);
+                if (!titleLink || (target !== titleLink && !titleLink.contains(target))) {
+                    return;
+                }
+
                 const conversationInfoEl = findConversationInfoButton(header);
-
-                if (!titleEl || !conversationInfoEl) {
-                    return false;
+                if (!conversationInfoEl || typeof conversationInfoEl.click !== 'function') {
+                    return;
                 }
 
-                if (titleEl.dataset.chatTitleOverrideBound === 'true') {
-                    return true;
-                }
-
-                titleEl.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    if (conversationInfoEl && typeof conversationInfoEl.click === 'function') {
-                        conversationInfoEl.click();
-                    }
-                }, true);
-
-                titleEl.dataset.chatTitleOverrideBound = 'true';
-                return true;
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                conversationInfoEl.click();
             };
 
-            if (attachOverride()) {
-                return true;
-            }
-
-            const observer = new MutationObserver(() => {
-                if (attachOverride()) {
-                    observer.disconnect();
-                }
-            });
-
-            const target = document.body || document.documentElement;
-            if (target) {
-                observer.observe(target, { childList: true, subtree: true });
-            }
-
-            setTimeout(() => {
-                observer.disconnect();
-            }, 10000);
+            document.addEventListener('mousedown', handleTitleClick, true);
+            document.addEventListener('click', handleTitleClick, true);
 
             return true;
         })();

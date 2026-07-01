@@ -16,6 +16,7 @@ const { updateBadge } = require('./src/badge');
 const { openFacebookHandler } = require('./src/handlers/open-facebook-handler');
 const { getUnreadMessageCounter } = require('./src/handlers/get-unread-message-counter');
 const { switchChat } = require('./src/handlers/switch-chat');
+const { overrideChatTitleClick } = require('./src/handlers/override-chat-title-clicker');
 const styleMessages = require('./src/handlers/styles/messages');
 const { autoUpdater } = require('electron-updater');
 
@@ -60,6 +61,19 @@ if (!gotTheLock) {
     return;
 }
 
+const reattachChatTitleOverride = async () => {
+    if (!win || win.isDestroyed()) {
+        return;
+    }
+
+    try {
+        await overrideChatTitleClick(win);
+    } catch (err) {
+        console.error('Failed to override chat title click:', err);
+    }
+};
+
+
 app.whenReady().then(() => {
     const splash = new BrowserWindow({
         width: 400,
@@ -90,6 +104,12 @@ app.whenReady().then(() => {
             await styleMessages(win);
         } catch (err) {
             console.error('Failed to inject custom styles:', err);
+        }
+
+        try {
+            await reattachChatTitleOverride();
+        } catch (err) {
+            console.error('Failed to override chat title click:', err);
         }
 
         if (splash && !splash.isDestroyed()) {
@@ -307,8 +327,6 @@ app.whenReady().then(() => {
         }
     });
 
-    updateBadge(app, win, tray, 0); // Initialize badge
-
     win.webContents.setWindowOpenHandler(openFacebookHandler);
 
     win.webContents.on('will-navigate', (event, url) => {
@@ -343,6 +361,10 @@ app.whenReady().then(() => {
         }
     });
 
+    win.webContents.on('did-navigate-in-page', async () => {
+        await reattachChatTitleOverride();
+    });
+
     win.webContents.on('page-title-updated', async (event, title) => {
         try {
             const unreadMessageCounter = await getUnreadMessageCounter(win);
@@ -351,6 +373,8 @@ app.whenReady().then(() => {
             console.error('Failed to update unread message counter:', err);
         }
     });
+
+    updateBadge(app, win, tray, 0); // Initialize badge
 });
 
 app.on('second-instance', () => {

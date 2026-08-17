@@ -145,6 +145,10 @@ app.whenReady().then(() => {
         return false;
     });
 
+    app.on('before-quit', () => {
+        app.isQuitting = true;
+    });
+
     const tray = new Tray(
         nativeImage.createFromPath(
             path.join(app.getAppPath(), 'assets/icon.png')

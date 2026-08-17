@@ -129,6 +129,14 @@ app.whenReady().then(() => {
         autoUpdater.checkForUpdatesAndNotify();
     });
 
+    app.on('activate', () => {
+        if (win) {
+            if (win.isMinimized()) win.restore();
+            win.show();
+            win.focus();
+        }
+    });
+
     win.on('close', (event) => {
         if (!app.isQuitting) {
             event.preventDefault();
@@ -281,7 +289,11 @@ app.whenReady().then(() => {
             submenu: [
                 { label: 'Show App', click: () => win.show() },
                 { type: 'separator' },
-                // Dành cho Windows/Linux
+                {
+                    label: 'Close Window',
+                    accelerator: 'CmdOrCtrl+W',
+                    role: 'close'
+                },
                 ...(!isMac ? [
                     {
                         label: 'Quit',

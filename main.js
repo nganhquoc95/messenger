@@ -56,6 +56,8 @@ let win;
 
 const gotTheLock = app.requestSingleInstanceLock();
 
+const isMac = process.platform === 'darwin';
+
 if (!gotTheLock) {
     app.quit();
     return;
@@ -75,13 +77,19 @@ const reattachChatTitleOverride = async () => {
 
 
 app.whenReady().then(() => {
+    const iconPath = path.join(app.getAppPath(), 'assets/icon.png');
+
+    if (isMac) {
+        app.dock.setIcon(iconPath);
+    }
+
     const splash = new BrowserWindow({
         width: 400,
         height: 500,
         transparent: true,
         frame: false,
         alwaysOnTop: false,
-        icon: nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png'))
+        icon: nativeImage.createFromPath(iconPath)
     });
     splash.loadFile('splash.html');
 
@@ -89,7 +97,7 @@ app.whenReady().then(() => {
         width: 1000,
         height: 800,
         show: false, // hide initially
-        icon: nativeImage.createFromPath(path.join(app.getAppPath(), 'assets/icon.png')),
+        icon: nativeImage.createFromPath(iconPath),
         autoHideMenuBar: true,
         webPreferences: {
             contextIsolation: true,
@@ -122,8 +130,11 @@ app.whenReady().then(() => {
     });
 
     win.on('close', (event) => {
-        event.preventDefault();
-        win.hide();
+        if (!app.isQuitting) {
+            event.preventDefault();
+            win.hide();
+        }
+        return false;
     });
 
     const tray = new Tray(
@@ -239,13 +250,48 @@ app.whenReady().then(() => {
     });
 
     // Create Application Menu
-    const appMenu = Menu.buildFromTemplate([
+    const template = [
+        // Menu mang tên App trên macOS (bắt buộc theo tiêu chuẩn macOS)
+        ...(isMac ? [{
+            label: app.name,
+            submenu: [
+                {
+                    label: 'About ' + app.name,
+                    click: () => createAboutWindow()
+                },
+                { type: 'separator' },
+                { role: 'services' },
+                { type: 'separator' },
+                { role: 'hide' },
+                { role: 'hideOthers' },
+                { role: 'unhide' },
+                { type: 'separator' },
+                {
+                    label: 'Quit ' + app.name,
+                    accelerator: 'CmdOrCtrl+Q', // Phím tắt Cmd + Q trên Mac
+                    click: () => {
+                        app.isQuitting = true; // Đánh dấu ứng dụng đang thoát thực sự
+                        app.quit();
+                    }
+                }
+            ]
+        }] : []),
         {
             label: 'File',
             submenu: [
                 { label: 'Show App', click: () => win.show() },
                 { type: 'separator' },
-                { label: 'Quit', role: 'quit' }
+                // Dành cho Windows/Linux
+                ...(!isMac ? [
+                    {
+                        label: 'Quit',
+                        accelerator: 'CmdOrCtrl+Q',
+                        click: () => {
+                            app.isQuitting = true;
+                            app.quit();
+                        }
+                    }
+                ] : [])
             ]
         },
         {
@@ -285,7 +331,9 @@ app.whenReady().then(() => {
                 }
             ]
         }
-    ]);
+    ];
+
+    const appMenu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(appMenu);
 
     function createAboutWindow() {
@@ -318,7 +366,7 @@ app.whenReady().then(() => {
     });
 
     win.webContents.on('before-input-event', (event, input) => {
-        if (input.control && input.type === 'keyDown') {
+        if ((input.control || input.meta) && input.type === 'keyDown') {
             const digit = parseInt(input.key);
             if (!isNaN(digit) && digit >= 1 && digit <= 9) {
                 event.preventDefault();
